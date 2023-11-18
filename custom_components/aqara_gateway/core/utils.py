@@ -1108,7 +1108,12 @@ DEVICES_AIOT = [{
         ['4.1.85', 'channel_0', 'channel 1', 'switch'],
         ['4.2.85', 'channel_1', 'channel 2', 'switch'],
         ['4.3.85', 'channel_2', 'channel 3', 'switch'],
-        ['13.1.85', None, 'button', None],
+        ['0.23.85', None, 'move_delta', 'sensor'],  # up is positive, down is negative
+        ['0.24.85', None, 'move_total', 'sensor'],
+        ['0.52.85', None, 'time_delta', 'sensor'],  # duration in ms
+        ['0.25.85', None, 'time_total', 'sensor'],
+        ['13.1.85', None, 'slider', None],  # 1:single 2:double 3:long 4:up 5:down
+        # ['13.1.85', None, 'button', None],
         ['13.21.85', None, 'button_1', None],
         ['13.22.85', None, 'button_2', None],
         ['13.23.85', None, 'button_3', None],
