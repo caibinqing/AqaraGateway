@@ -117,7 +117,7 @@ class XiaomiGenericCover(GatewayGenericDevice, CoverEntity, RestoreEntity):
         """Return if the cover is closed."""
         if (position := self.current_cover_position) is None:
             return None
-        return position == 0
+        return position < 5
 
     def update(self, data: dict = None):
         """ update state """
