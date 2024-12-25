@@ -39,10 +39,11 @@ from .core.const import (
     GAS_DENSITY,
     NO_CLOSE,
     LQI,
+    SLIDER,
     VOLTAGE,
     VIBRATION,
     SMOKE_DENSITY,
-    )
+)
 
 
 DEVICE_CLASS = {
@@ -712,6 +713,9 @@ class GatewayAction(GatewayBinarySensor, BinarySensorEntity):
                 break
             if key.startswith('scense'):
                 data[self._attr] = key + '_' + str(value)
+                break
+            if key == 'slider':
+                data[self._attr] = SLIDER.get(value, 'unknown')
                 break
 
         if self._attr in data:
