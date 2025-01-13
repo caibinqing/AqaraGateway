@@ -292,6 +292,14 @@ CUBE = {
     'tap_twice': 'knock'
 }
 
+SLIDER = {
+    1: 'single',
+    2: 'double',
+    3: 'long',
+    4: 'up',
+    5: 'down',
+}
+
 ATTR_DENSITY = "density"
 ATTR_OPEN_SINCE = "open since"
 ALARM = "alarm"
