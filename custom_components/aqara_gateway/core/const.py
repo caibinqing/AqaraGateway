@@ -122,6 +122,7 @@ ATTR_IN_USE = "in_use"
 ATTR_LQI = "lqi"
 ATTR_POWER_CONSUMED = "power_consumed"
 ATTR_ELAPSED_TIME = "elapsed_time"
+ATTR_COLOR_TEMP = "color_temp"
 
 BATTERY = "battery"
 CHIP_TEMPERATURE = "chip_temperature"
