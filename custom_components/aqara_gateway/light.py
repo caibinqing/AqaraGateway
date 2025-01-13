@@ -3,9 +3,15 @@ import binascii
 import struct
 
 import homeassistant.util.color as color_util
-from homeassistant.components.light import ColorMode, LightEntity, LightEntityFeature, \
-    ATTR_BRIGHTNESS, ATTR_COLOR_TEMP, ATTR_RGB_COLOR, \
-    SUPPORT_COLOR, ATTR_HS_COLOR
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP_KELVIN,
+    ATTR_HS_COLOR,
+    ATTR_RGB_COLOR,
+    ColorMode,
+    LightEntity,
+    LightEntityFeature,
+)
 
 from . import DOMAIN, GatewayGenericDevice
 from .core.gateway import Gateway
@@ -15,6 +21,7 @@ from .core.const import (
     ATTR_HW_VER,
     ATTR_LQI,
     ATTR_CHIP_TEMPERATURE,
+    ATTR_COLOR_TEMP,
     CHIP_TEMPERATURE,
     FW_VER,
     HW_VER,
@@ -43,6 +50,10 @@ async def async_unload_entry(hass, entry):
 
 class GatewayLight(GatewayGenericDevice, LightEntity):
     """Representation of a Xiaomi/Aqara Light."""
+
+    _attr_min_color_temp_kelvin: int = 2702  # 370
+    _attr_max_color_temp_kelvin: int = 6535  # 153
+
     _white = None
     _state = None
 
@@ -116,7 +127,7 @@ class GatewayLight(GatewayGenericDevice, LightEntity):
             if ATTR_BRIGHTNESS in data:
                 self._attr_brightness = int(data[ATTR_BRIGHTNESS] / 100.0 * 255.0)
             if ATTR_COLOR_TEMP in data:
-                self._attr_color_temp = data[ATTR_COLOR_TEMP]
+                self._attr_color_temp_kelvin = color_util.color_temperature_mired_to_kelvin(data[ATTR_COLOR_TEMP])
             if ATTR_RGB_COLOR in data:
                 self._attr_rgb_color = data[ATTR_RGB_COLOR]
             if ATTR_HS_COLOR in data:
@@ -149,9 +160,9 @@ class GatewayLight(GatewayGenericDevice, LightEntity):
             self._attr_brightness = int(kwargs[ATTR_BRIGHTNESS] / 255.0 * 100.0)
             payload[ATTR_BRIGHTNESS] = self._attr_brightness
 
-        if ATTR_COLOR_TEMP in kwargs:
-            self._attr_color_temp = kwargs[ATTR_COLOR_TEMP]
-            payload[ATTR_COLOR_TEMP] = self._attr_color_temp
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            self._attr_color_temp_kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
+            payload[ATTR_COLOR_TEMP] = color_util.color_temperature_kelvin_to_mired(self._attr_color_temp_kelvin)
 
         if ATTR_RGB_COLOR in kwargs:
             self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
@@ -163,7 +174,7 @@ class GatewayLight(GatewayGenericDevice, LightEntity):
         if (ATTR_HS_COLOR in kwargs or ATTR_BRIGHTNESS in kwargs or
                 self._attr == ATTR_RGB_COLOR):
             if self._attr_hs_color:
-                payload[ATTR_HS_COLOR] = self._attr_color_temp
+                payload[ATTR_HS_COLOR] = color_util.color_temperature_kelvin_to_mired(self._attr_color_temp_kelvin)
                 rgb = color_util.color_hs_to_RGB(*self._attr_hs_color)
                 rgba = (self._attr_brightness,) + rgb
                 if isinstance(self._attr_brightness, int):
