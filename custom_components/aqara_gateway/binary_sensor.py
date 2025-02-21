@@ -1,24 +1,20 @@
 """Support for Xiaomi Aqara binary sensors."""
+
 import time
 
 from homeassistant.components.automation import ATTR_LAST_TRIGGERED
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorDeviceClass,
+    BinarySensorEntityDescription,
 )
-try:
-    from homeassistant.core_config import DATA_CUSTOMIZE
-except:
-    from homeassistant.config import DATA_CUSTOMIZE
+from homeassistant.const import ATTR_BATTERY_LEVEL, ATTR_VOLTAGE, STATE_OFF, STATE_ON
+from homeassistant.core_config import DATA_CUSTOMIZE
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util.dt import now
-from homeassistant.const import (
-    ATTR_BATTERY_LEVEL,
-    ATTR_VOLTAGE
-)
 
 from . import DOMAIN, GatewayGenericDevice
-from .core.gateway import Gateway
 from .core.const import (
     ATTR_ANGLE,
     ATTR_CHIP_TEMPERATURE,
@@ -42,13 +38,8 @@ from .core.const import (
     VOLTAGE,
     VIBRATION,
     SMOKE_DENSITY,
-    )
-
-
-DEVICE_CLASS = {
-    'contact': BinarySensorDeviceClass.DOOR,
-    'water_leak': BinarySensorDeviceClass.MOISTURE,
-}
+)
+from .core.gateway import Gateway
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -67,7 +58,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         elif attr == 'motion':
             async_add_entities([GatewayMotionSensor(gateway, device, attr)])
         elif attr == 'moisture':
-            async_add_entities([GatewaWaterLeakSensor(gateway, device, attr)])
+            async_add_entities([GatewayWaterLeakSensor(gateway, device, attr)])
         elif attr == 'door_state':  # door state
             async_add_entities([GatewayLockDoorState(gateway, device, attr)])
         elif attr in ['auto locking', 'lock by handle']:  # lock state
@@ -75,71 +66,150 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         elif attr == 'latch_state':  # latch state
             async_add_entities([GatewayLockLatchState(gateway, device, attr)])
         else:
-            async_add_entities([GatewayBinarySensor(gateway, device, attr)])
+            async_add_entities([GatewayCommonBinarySensor(gateway, device, attr)])
 
     aqara_gateway: Gateway = hass.data[DOMAIN][config_entry.entry_id]
     aqara_gateway.add_setup('binary_sensor', setup)
 
 
+DESCRIPTIONS = {
+    'contact': BinarySensorEntityDescription(
+        key='contact',
+        device_class=BinarySensorDeviceClass.DOOR,
+    ),
+    'door': BinarySensorEntityDescription(
+        key='door',
+        device_class=BinarySensorDeviceClass.DOOR,
+    ),
+    'door_state': BinarySensorEntityDescription(
+        key='door_state',
+        device_class=BinarySensorDeviceClass.DOOR,
+    ),
+    'gas': BinarySensorEntityDescription(
+        key='gas',
+        device_class=BinarySensorDeviceClass.GAS,
+    ),
+    'lock': BinarySensorEntityDescription(
+        key='lock',
+        device_class=BinarySensorDeviceClass.LOCK,
+    ),
+    'latch_state': BinarySensorEntityDescription(
+        key='latch_state',
+        device_class=BinarySensorDeviceClass.LOCK,
+    ),
+    'auto locking': BinarySensorEntityDescription(
+        key='auto locking',
+        device_class=BinarySensorDeviceClass.LOCK,
+    ),
+    'lock by handle': BinarySensorEntityDescription(
+        key='lock by handle',
+        device_class=BinarySensorDeviceClass.LOCK,
+    ),
+    'moisture': BinarySensorEntityDescription(
+        key='moisture',
+        device_class=BinarySensorDeviceClass.MOISTURE,
+    ),
+    'motion': BinarySensorEntityDescription(
+        key='motion',
+        device_class=BinarySensorDeviceClass.MOTION,
+    ),
+    'occupancy': BinarySensorEntityDescription(
+        key='occupancy',
+        device_class=BinarySensorDeviceClass.OCCUPANCY,
+    ),
+    'smoke': BinarySensorEntityDescription(
+        key='smoke',
+        device_class=BinarySensorDeviceClass.SMOKE,
+    ),
+    'action': BinarySensorEntityDescription(
+        key='action',
+        icon='hass:radiobox-blank',
+    ),
+    'switch': BinarySensorEntityDescription(
+        key='switch',
+        icon='hass:radiobox-blank',
+    ),
+}
+
+
 class GatewayBinarySensor(GatewayGenericDevice, BinarySensorEntity):
     """Representation of a Xiaomi/Aqara Binary Sensor."""
-    _state = False
+
     _battery = None
     _chip_temperature = None
     _fw_ver = None
     _lqi = None
     _voltage = None
-    _should_poll = False
+
     is_metric = False
 
-    @property
-    def should_poll(self):
-        """Return True if entity has to be polled for state."""
-        return self._should_poll
+    def __init__(self, gateway: Gateway, device: dict, attr: str):
+        """Initialize the Xiaomi/Aqara Binary Sensor."""
+        super().__init__(gateway, device, attr)
+        if attr in DESCRIPTIONS:
+            self.entity_description = DESCRIPTIONS[attr]
 
-    @property
-    def is_on(self):
-        """Return true if sensor is on."""
-        return self._state
+    def update(self, data: dict):
+        for key, value in data.items():
+            if key == BATTERY:
+                self._battery = value
+            if key == CHIP_TEMPERATURE:
+                if self.is_metric:
+                    self._chip_temperature = (
+                        format((int(value) - 32) * 5 / 9, '.2f')
+                        if isinstance(value, (int, float))
+                        else None
+                    )
+                else:
+                    self._chip_temperature = value
+            if key == FW_VER:
+                self._fw_ver = value
+            if key == LQI:
+                self._lqi = value
+            if key == VOLTAGE:
+                self._voltage = (
+                    format(float(value) / 1000, '.3f')
+                    if isinstance(value, (int, float))
+                    else None
+                )
+        self.schedule_update_ha_state()
 
-    @property
-    def device_class(self):
-        """Return the class of binary sensor."""
-        return DEVICE_CLASS.get(self._attr, self._attr)
 
-    def update(self, data: dict = None):
-        """Update the sensor state."""
+class GatewayRestoredBinarySensor(GatewayBinarySensor, RestoreEntity):
+    """Representation of a Xiaomi/Aqara Binary Sensor with restored data."""
+
+    async def async_added_to_hass(self):
+        """Run when entity about to be added to hass."""
+        if last_state := await self.async_get_last_state():
+            if last_state.state == STATE_ON:
+                self._attr_is_on = True
+            elif last_state.state == STATE_OFF:
+                self._attr_is_on = False
+        await super().async_added_to_hass()
+
+
+class GatewayCommonBinarySensor(GatewayRestoredBinarySensor):
+    """Representation of a Xiaomi/Aqara Common Binary Sensor."""
+
+    def update(self, data: dict):
+        """ update common binary sensor """
+        super().update(data)
+
         if self._attr in data:
+            value = data[self._attr]
             custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
             if not custom.get(CONF_INVERT_STATE):
-                # gas and smoke => 1 and 2
-                self._state = bool(data[self._attr])
+                self._attr_is_on = bool(value)
             else:
-                self._state = not data[self._attr]
+                self._attr_is_on = not value
 
         self.schedule_update_ha_state()
 
-    def reset_state(self):
-        self._state = ''
-        self.async_write_ha_state()
 
-
-class GatewayNatgasSensor(GatewayBinarySensor, BinarySensorEntity):
+class GatewayNatgasSensor(GatewayRestoredBinarySensor):
     """Representation of a Xiaomi/Aqara Natgas Sensor."""
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
-        """Initialize the Xiaomi/Aqara Natgas Sensor."""
-        self._state = False
-        self._chip_temperature = None
-        self._density = None
-        self._fw_ver = None
-        self._lqi = None
-        super().__init__(gateway, device, attr)
+    _density: int | None = None
 
     @property
     def extra_state_attributes(self):
@@ -152,24 +222,20 @@ class GatewayNatgasSensor(GatewayBinarySensor, BinarySensorEntity):
         }
         return attrs
 
-    def update(self, data: dict = None):
+    def update(self, data: dict):
         """ update Natgas sensor """
+        super().update(data)
 
-        for key, value in data.items():
-            if key == GAS_DENSITY:
-                self._density = int(value)
-            if key == CHIP_TEMPERATURE:
-                self._chip_temperature = value
-            if key == FW_VER:
-                self._fw_ver = value
-            if key == LQI:
-                self._lqi = value
-            if key == self._attr:
-                custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
-                if not custom.get(CONF_INVERT_STATE):
-                    self._state = bool(value)
-                else:
-                    self._state = not value
+        if self._attr in data:
+            value = data[self._attr]
+            custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+            if not custom.get(CONF_INVERT_STATE):
+                self._attr_is_on = bool(value)
+            else:
+                self._attr_is_on = not value
+
+        if GAS_DENSITY in data:
+            self._density = int(data[GAS_DENSITY])
 
         self.schedule_update_ha_state()
 
@@ -177,28 +243,18 @@ class GatewayNatgasSensor(GatewayBinarySensor, BinarySensorEntity):
 class GatewayMotionSensor(GatewayBinarySensor):
     """Representation of a Xiaomi/Aqara Motion Sensor."""
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
+    def __init__(self, gateway: Gateway, device: dict, attr: str):
         """Initialize the Xiaomi/Aqara Motion Sensor."""
+        super().__init__(gateway, device, attr)
+
+        self._attr_is_on = False
+
         self._default_delay = None
         self._last_on = 0
         self._last_off = 0
         self._timeout_pos = 0
         self._unsub_set_no_motion = None
-        self._state = False
-        self._battery = None
-        self._chip_temperature = None
-        self._lqi = None
-        self._voltage = None
         self._open_since = None
-        self.is_metric = False
-        #if device['model'] in ('lumi.motion.agl02', 'lumi.sensor_motion.aq2', 'lumi.motion.agl04'):
-        #    self.is_metric = False
-        super().__init__(gateway, device, attr)
 
     async def async_added_to_hass(self):
         """ add to hass """
@@ -230,7 +286,7 @@ class GatewayMotionSensor(GatewayBinarySensor):
         self._last_off = time.time()
         self._timeout_pos = 0
         self._unsub_set_no_motion = None
-        self._state = False
+        self._attr_is_on = False
         self.schedule_update_ha_state()
 
         # repeat event from Aqara integration
@@ -238,8 +294,9 @@ class GatewayMotionSensor(GatewayBinarySensor):
             'entity_id': self.entity_id
         })
 
-    def update(self, data: dict = None):
+    def update(self, data: dict):
         """ update motion sensor """
+        super().update(data)
 
         # https://github.com/AlexxIT/XiaomiGateway3/issues/135
         if 'illuminance' in data and ('lumi.sensor_motion.aq2' in
@@ -247,23 +304,8 @@ class GatewayMotionSensor(GatewayBinarySensor):
             data[self._attr] = 1
 
         for key, value in data.items():
-            if key == BATTERY:
-                self._battery = value
-            if key == CHIP_TEMPERATURE:
-                if self.is_metric:
-                    self._chip_temperature = format(
-                        (int(value) - 32) * 5 / 9, '.2f') if isinstance(
-                        value, (int, float)) else None
-                else:
-                    self._chip_temperature = value
             if key == NO_CLOSE:  # handle push from the hub
                 self._open_since = value
-            if key == LQI:
-                self._lqi = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
             if key == ELAPSED_TIME:
                 self._attrs[ATTR_ELAPSED_TIME] = data[ELAPSED_TIME]
 
@@ -287,7 +329,7 @@ class GatewayMotionSensor(GatewayBinarySensor):
         if time_now - self._last_on < 1:
             return
 
-        self._state = True
+        self._attr_is_on = True
         self._attrs[ATTR_LAST_TRIGGERED] = now().isoformat(timespec='seconds')
         self._last_on = time_now
 
@@ -320,22 +362,12 @@ class GatewayMotionSensor(GatewayBinarySensor):
         })
 
 
-class GatewayDoorSensor(GatewayBinarySensor, BinarySensorEntity):
-    # pylint: disable=too-many-instance-attributes
+class GatewayDoorSensor(GatewayRestoredBinarySensor):
     """Representation of a Xiaomi/Aqara Door Sensor."""
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
+    def __init__(self, gateway: Gateway, device: dict, attr: str):
         """Initialize the Xiaomi/Aqara Door Sensor."""
-        self._state = False
-        self._battery = None
-        self._chip_temperature = None
-        self._lqi = None
-        self._voltage = None
+        super().__init__(gateway, device, attr)
         self._open_since = None
         self.is_metric = True
         self.has_since = False
@@ -343,7 +375,6 @@ class GatewayDoorSensor(GatewayBinarySensor, BinarySensorEntity):
                 'lumi.sensor_magnet.aq2', 'lumi.magnet.agl02', 'lumi.magnet.ac01'):
             self.is_metric = False
             self.has_since = True
-        super().__init__(gateway, device, attr)
 
     @property
     def extra_state_attributes(self):
@@ -358,59 +389,28 @@ class GatewayDoorSensor(GatewayBinarySensor, BinarySensorEntity):
             attrs[ATTR_OPEN_SINCE] = self._open_since
         return attrs
 
-    def update(self, data: dict = None):
+    def update(self, data: dict):
         """ update door sensor """
+        super().update(data)
 
-        for key, value in data.items():
-            if key == BATTERY:
-                self._battery = value
-            if key == CHIP_TEMPERATURE:
-                if self.is_metric:
-                    self._chip_temperature = format(
-                        (int(value) - 32) * 5 / 9, '.2f') if isinstance(
-                        value, (int, float)) else None
-                else:
-                    self._chip_temperature = value
-            if key == NO_CLOSE:  # handle push from the hub
-                self._open_since = value
-            if key == LQI:
-                self._lqi = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
-            if key == self._attr:
-                if (self.device['model'] == 'lumi.magnet.acn001' and
-                        self.gateway.cloud == "miot"):
-                    value = not value
-                custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
-                if not custom.get(CONF_INVERT_STATE):
-                    self._state = bool(value)
-                else:
-                    self._state = not value
+        if self._attr in data:
+            value = data[self._attr]
+            if self.device['model'] == 'lumi.magnet.acn001' and self.gateway.cloud == "miot":
+                value = not value
+            custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+            if not custom.get(CONF_INVERT_STATE):
+                self._attr_is_on = bool(value)
+            else:
+                self._attr_is_on = not value
+
+        if NO_CLOSE in data:  # handle push from the hub
+            self._open_since = data[NO_CLOSE]
 
         self.schedule_update_ha_state()
 
 
-class GatewaWaterLeakSensor(GatewayBinarySensor, BinarySensorEntity):
+class GatewayWaterLeakSensor(GatewayRestoredBinarySensor):
     """Representation of a Xiaomi/Aqara Water Leak Sensor."""
-
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
-        """Initialize the Xiaomi/Aqara Water Leak Sensor."""
-        self._state = False
-        self._battery = None
-        self._chip_temperature = None
-        self._lqi = None
-        self._voltage = None
-        self._should_poll = False
-        self._open_since = None
-        self.is_metric = False
-        super().__init__(gateway, device, attr)
 
     @property
     def extra_state_attributes(self):
@@ -423,56 +423,25 @@ class GatewaWaterLeakSensor(GatewayBinarySensor, BinarySensorEntity):
         }
         return attrs
 
-    def update(self, data: dict = None):
+    def update(self, data: dict):
         """ update water leak sensor """
-        self._should_poll = False
+        super().update(data)
 
-        for key, value in data.items():
-            if key == BATTERY:
-                self._battery = value
-            if key == CHIP_TEMPERATURE:
-                if self.is_metric:
-                    self._chip_temperature = format(
-                        (int(value) - 32) * 5 / 9, '.2f') if isinstance(
-                        value, (int, float)) else None
-                else:
-                    self._chip_temperature = value
-            if key == LQI:
-                self._lqi = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
-            if key == self._attr:
-                # if self.device['model'] == 'lumi.flood.agl02':
-                #     value = not value
-                custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
-                if not custom.get(CONF_INVERT_STATE):
-                    self._state = bool(value)
-                else:
-                    self._state = not value
-                self._should_poll = True
+        if self._attr in data:
+            value = data[self._attr]
+            custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+            if not custom.get(CONF_INVERT_STATE):
+                self._attr_is_on = bool(value)
+            else:
+                self._attr_is_on = not value
 
         self.schedule_update_ha_state()
 
 
-class GatewaySmokeSensor(GatewayBinarySensor, BinarySensorEntity):
+class GatewaySmokeSensor(GatewayRestoredBinarySensor):
     """Representation of a Xiaomi/Aqara Smoke Sensor."""
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
-        """Initialize the Xiaomi/Aqara Button Switch."""
-        self._state = False
-        self._chip_temperature = None
-        self._density = None
-        self._fw_ver = None
-        self._lqi = None
-        self._voltage = None
-        super().__init__(gateway, device, attr)
+    _density: int | None = None
 
     @property
     def extra_state_attributes(self):
@@ -486,61 +455,38 @@ class GatewaySmokeSensor(GatewayBinarySensor, BinarySensorEntity):
         }
         return attrs
 
-    def update(self, data: dict = None):
-        """ update smoke sensor """
+    def update(self, data: dict):
+        """update smoke sensor"""
+        super().update(data)
 
-        for key, value in data.items():
-            if key == SMOKE_DENSITY:
-                self._density = int(value)
-            if key == CHIP_TEMPERATURE:
-                self._chip_temperature = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
-            if key == FW_VER:
-                self._fw_ver = value
-            if key == LQI:
-                self._lqi = value
-            if key == self._attr:
-                custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
-                if not custom.get(CONF_INVERT_STATE):
-                    self._state = bool(value)
-                else:
-                    self._state = not value
+        if self._attr in data:
+            value = data[self._attr]
+            custom = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+            if not custom.get(CONF_INVERT_STATE):
+                self._attr_is_on = bool(value)
+            else:
+                self._attr_is_on = not value
+
+        if SMOKE_DENSITY in data:
+            self._density = int(data[SMOKE_DENSITY])
 
         self.schedule_update_ha_state()
 
 
-class GatewayButtonSwitch(GatewayBinarySensor, BinarySensorEntity):
-    """ Xiaomi/Aqara Button Switch """
+class GatewayButtonSwitch(GatewayBinarySensor):
+    """Xiaomi/Aqara Button Switch"""
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
+    def __init__(self, gateway: Gateway, device: dict, attr: str):
         """Initialize the Xiaomi/Aqara Button Switch."""
-        self._state = False
-        self._battery = None
-        self._chip_temperature = None
-        self._lqi = None
-        self._voltage = None
-        self.is_metric = False
+        super().__init__(gateway, device, attr)
+        self._state = ''
         if device['model'] == 'lumi.sensor_switch':
             self.is_metric = True
-        super().__init__(gateway, device, attr)
 
     @property
     def state(self):
         """return state."""
         return self._state
-
-    @property
-    def icon(self):
-        """return icon."""
-        return 'hass:radiobox-blank'
 
     @property
     def extra_state_attributes(self):
@@ -553,25 +499,9 @@ class GatewayButtonSwitch(GatewayBinarySensor, BinarySensorEntity):
         }
         return attrs
 
-    def update(self, data: dict = None):
-        # pylint: disable=too-many-branches
+    def update(self, data: dict):
         """update Button Switch."""
-        for key, value in data.items():
-            if key == BATTERY:
-                self._battery = value
-            if key == CHIP_TEMPERATURE:
-                if self.is_metric:
-                    self._chip_temperature = format(
-                        (int(value) - 32) * 5 / 9, '.2f') if isinstance(
-                        value, (int, float)) else None
-                else:
-                    self._chip_temperature = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
-            if key == LQI:
-                self._lqi = value
+        super().update(data)
 
         for key, value in data.items():
             if ":" in key:
@@ -611,22 +541,18 @@ class GatewayButtonSwitch(GatewayBinarySensor, BinarySensorEntity):
 
         self.schedule_update_ha_state()
 
+    def reset_state(self):
+        self._state = ''
+        self.async_write_ha_state()
 
-class GatewayAction(GatewayBinarySensor, BinarySensorEntity):
+
+class GatewayAction(GatewayBinarySensor):
     """ Xiaomi/Aqara Action Cube """
 
-    def __init__(
-        self,
-        gateway,
-        device,
-        attr,
-    ):
+    def __init__(self, gateway: Gateway, device: dict, attr: str):
         """Initialize the Xiaomi/Aqara Action Cube."""
-        self._state = False
-        self._battery = None
-        self._chip_temperature = None
-        self._lqi = None
-        self._voltage = None
+        super().__init__(gateway, device, attr)
+        self._state = ''
         self._rotate_angle = None
         self.with_rotation = False
         if (device['model'] in ('lumi.remote.rkba01', 'lumi.switch.rkna01',
@@ -634,17 +560,11 @@ class GatewayAction(GatewayBinarySensor, BinarySensorEntity):
             self.with_rotation = True
         if device['model'] == 'lumi.motion.agl04':
             self.is_metric = True
-        super().__init__(gateway, device, attr)
 
     @property
     def state(self):
         """return state."""
         return self._state
-
-    @property
-    def icon(self):
-        """return icon."""
-        return 'hass:radiobox-blank'
 
     @property
     def extra_state_attributes(self):
@@ -658,28 +578,13 @@ class GatewayAction(GatewayBinarySensor, BinarySensorEntity):
             self._attrs[ATTR_ANGLE] = self._rotate_angle
         return self._attrs
 
-    def update(self, data: dict = None):
-        # pylint: disable=too-many-branches
+    def update(self, data: dict):
         """update Button Switch."""
+        super().update(data)
+
         if self.with_rotation:
             self._rotate_angle = None
         for key, value in data.items():
-            if key == BATTERY:
-                self._battery = value
-            if key == CHIP_TEMPERATURE:
-                if self.is_metric:
-                    self._chip_temperature = format(
-                        (int(value) - 32) * 5 / 9, '.2f') if isinstance(
-                        value, (int, float)) else None
-                else:
-                    self._chip_temperature = value
-            if key == VOLTAGE:
-                self._voltage = format(
-                    float(value) / 1000, '.3f') if isinstance(
-                    value, (int, float)) else None
-            if key == LQI:
-                self._lqi = value
-
             # skip tilt and wait tilt_angle
             if key == 'vibration' and value != 2:
                 data[self._attr] = VIBRATION.get(value, 'unknown')
@@ -728,6 +633,10 @@ class GatewayAction(GatewayBinarySensor, BinarySensorEntity):
 
         self.schedule_update_ha_state()
 
+    def reset_state(self):
+        self._state = ''
+        self.async_write_ha_state()
+
 
 # guess door/lock/latch state from 'door' attr
 # True means open or unlocked
@@ -742,7 +651,7 @@ STATES_FROM_DOOR = {
 }
 
 
-class GatewayLockDoorState(GatewayBinarySensor):
+class GatewayLockDoorState(GatewayRestoredBinarySensor):
     """
     Door state of an Aqara Door Lock.
     _attr: 'door_state'
@@ -758,60 +667,51 @@ class GatewayLockDoorState(GatewayBinarySensor):
         5: True,  # Door is concealed
     }
 
-    @property
-    def device_class(self):
-        return BinarySensorDeviceClass.DOOR
-
-    def update(self, data: dict = None):
+    def update(self, data: dict):
+        super().update(data)
         if "lock" in data:
             value = data["lock"]
             if value in GatewayLockDoorState.DOOR_STATE_MAP:
-                self._state = GatewayLockDoorState.DOOR_STATE_MAP[value]
+                self._attr_is_on = GatewayLockDoorState.DOOR_STATE_MAP[value]
                 self.async_write_ha_state()
         elif "door" in data:
             value = data["door"]
             if value in STATES_FROM_DOOR:
-                self._state = STATES_FROM_DOOR[value]["door"]
+                self._attr_is_on = STATES_FROM_DOOR[value]["door"]
                 self.async_write_ha_state()
 
 
-class GatewayLockLockState(GatewayBinarySensor):
+class GatewayLockLockState(GatewayRestoredBinarySensor):
     """
     Lock state of an Aqara Door Lock.
     _attr: 'auto locking' or 'lock by handle'
     """
 
-    @property
-    def device_class(self):
-        return BinarySensorDeviceClass.LOCK
-
-    def update(self, data: dict = None):
+    def update(self, data: dict):
+        super().update(data)
         if self._attr in data:  # _attr: 'auto locking' or 'lock by handle'
-            self._state = not data[self._attr]  # 1: Locked
+            self._attr_is_on = not data[self._attr]  # 1: Locked
             self.async_write_ha_state()
         elif "door" in data:
             value = data["door"]
             if value in STATES_FROM_DOOR:
-                self._state = STATES_FROM_DOOR[value]["lock"]
+                self._attr_is_on = STATES_FROM_DOOR[value]["lock"]
                 self.async_write_ha_state()
 
 
-class GatewayLockLatchState(GatewayBinarySensor):
+class GatewayLockLatchState(GatewayRestoredBinarySensor):
     """
     Latch state of an Aqara Door Lock.
     _attr: 'latch_state'
     """
 
-    @property
-    def device_class(self):
-        return BinarySensorDeviceClass.LOCK
-
-    def update(self, data: dict = None):
+    def update(self, data: dict):
+        super().update(data)
         if self._attr in data:  # _attr: 'latch_state'
-            self._state = not data[self._attr]  # 0: Unlocked 1: Locked
+            self._attr_is_on = not data[self._attr]  # 0: Unlocked 1: Locked
             self.async_write_ha_state()
         elif "door" in data:
             value = data["door"]
             if value in STATES_FROM_DOOR:
-                self._state = STATES_FROM_DOOR[value]["latch"]
+                self._attr_is_on = STATES_FROM_DOOR[value]["latch"]
                 self.async_write_ha_state()
