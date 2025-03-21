@@ -211,16 +211,16 @@ class GatewayNatgasSensor(GatewayRestoredBinarySensor):
 
     _density: int | None = None
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_DENSITY: self._density,
-            ATTR_FW_VER: self._fw_ver,
-            ATTR_LQI: self._lqi,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_DENSITY: self._density,
+    #         ATTR_FW_VER: self._fw_ver,
+    #         ATTR_LQI: self._lqi,
+    #     }
+    #     return attrs
 
     def update(self, data: dict):
         """ update Natgas sensor """
@@ -266,14 +266,14 @@ class GatewayMotionSensor(GatewayBinarySensor):
 
         await super().async_added_to_hass()
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        self._attrs[ATTR_BATTERY_LEVEL] = self._battery
-        self._attrs[ATTR_CHIP_TEMPERATURE] = self._chip_temperature
-        self._attrs[ATTR_LQI] = self._lqi
-        self._attrs[ATTR_VOLTAGE] = self._voltage
-        return self._attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     self._attrs[ATTR_BATTERY_LEVEL] = self._battery
+    #     self._attrs[ATTR_CHIP_TEMPERATURE] = self._chip_temperature
+    #     self._attrs[ATTR_LQI] = self._lqi
+    #     self._attrs[ATTR_VOLTAGE] = self._voltage
+    #     return self._attrs
 
     async def _start_no_motion_timer(self, delay: float):
         if self._unsub_set_no_motion:
@@ -376,18 +376,18 @@ class GatewayDoorSensor(GatewayRestoredBinarySensor):
             self.is_metric = False
             self.has_since = True
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_BATTERY_LEVEL: self._battery,
-            ATTR_LQI: self._lqi,
-            ATTR_VOLTAGE: self._voltage,
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-        }
-        if self.has_since:
-            attrs[ATTR_OPEN_SINCE] = self._open_since
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_BATTERY_LEVEL: self._battery,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_VOLTAGE: self._voltage,
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #     }
+    #     if self.has_since:
+    #         attrs[ATTR_OPEN_SINCE] = self._open_since
+    #     return attrs
 
     def update(self, data: dict):
         """ update door sensor """
@@ -412,16 +412,16 @@ class GatewayDoorSensor(GatewayRestoredBinarySensor):
 class GatewayWaterLeakSensor(GatewayRestoredBinarySensor):
     """Representation of a Xiaomi/Aqara Water Leak Sensor."""
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_BATTERY_LEVEL: self._battery,
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_LQI: self._lqi,
-            ATTR_VOLTAGE: self._voltage,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_BATTERY_LEVEL: self._battery,
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_VOLTAGE: self._voltage,
+    #     }
+    #     return attrs
 
     def update(self, data: dict):
         """ update water leak sensor """
@@ -443,17 +443,17 @@ class GatewaySmokeSensor(GatewayRestoredBinarySensor):
 
     _density: int | None = None
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_DENSITY: self._density,
-            ATTR_FW_VER: self._fw_ver,
-            ATTR_LQI: self._lqi,
-            ATTR_VOLTAGE: self._voltage,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_DENSITY: self._density,
+    #         ATTR_FW_VER: self._fw_ver,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_VOLTAGE: self._voltage,
+    #     }
+    #     return attrs
 
     def update(self, data: dict):
         """update smoke sensor"""
@@ -488,16 +488,16 @@ class GatewayButtonSwitch(GatewayBinarySensor):
         """return state."""
         return self._state
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_BATTERY_LEVEL: self._battery,
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_LQI: self._lqi,
-            ATTR_VOLTAGE: self._voltage,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_BATTERY_LEVEL: self._battery,
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_VOLTAGE: self._voltage,
+    #     }
+    #     return attrs
 
     def update(self, data: dict):
         """update Button Switch."""
@@ -566,17 +566,17 @@ class GatewayAction(GatewayBinarySensor):
         """return state."""
         return self._state
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        self._attrs[ATTR_BATTERY_LEVEL] = self._battery
-        self._attrs[ATTR_CHIP_TEMPERATURE] = self._chip_temperature
-        self._attrs[ATTR_LQI] = self._lqi
-        self._attrs[ATTR_VOLTAGE] = self._voltage
-
-        if self.with_rotation:
-            self._attrs[ATTR_ANGLE] = self._rotate_angle
-        return self._attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     self._attrs[ATTR_BATTERY_LEVEL] = self._battery
+    #     self._attrs[ATTR_CHIP_TEMPERATURE] = self._chip_temperature
+    #     self._attrs[ATTR_LQI] = self._lqi
+    #     self._attrs[ATTR_VOLTAGE] = self._voltage
+    #
+    #     if self.with_rotation:
+    #         self._attrs[ATTR_ANGLE] = self._rotate_angle
+    #     return self._attrs
 
     def update(self, data: dict):
         """update Button Switch."""

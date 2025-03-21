@@ -74,17 +74,17 @@ class GatewayAirMonitorSensor(GatewayGenericDevice, AirQualityEntity):
         self._should_poll = False
         self.is_metric = False
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_BATTERY_LEVEL: self._battery,
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_FW_VER: self._fw_ver,
-            ATTR_LQI: self._lqi,
-            ATTR_VOLTAGE: self._voltage,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_BATTERY_LEVEL: self._battery,
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_FW_VER: self._fw_ver,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_VOLTAGE: self._voltage,
+    #     }
+    #     return attrs
 
     @property
     def should_poll(self):
@@ -161,18 +161,18 @@ class GatewayAirMonitorSensor(GatewayGenericDevice, AirQualityEntity):
         """Return the current humidity."""
         return self._humidity
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-
-        data = {}
-
-        for prop, attr in PROP_TO_ATTR.items():
-            value = getattr(self, prop)
-            if value is not None:
-                data[attr] = value
-
-        return data
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #
+    #     data = {}
+    #
+    #     for prop, attr in PROP_TO_ATTR.items():
+    #         value = getattr(self, prop)
+    #         if value is not None:
+    #             data[attr] = value
+    #
+    #     return data
 
     @property
     def unit_of_measurement(self):
@@ -188,18 +188,18 @@ class GatewayTvocSensor(GatewayAirMonitorSensor, AirQualityEntity):
         super().__init__(gateway, device, attr)
         self._state = 0
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_BATTERY_LEVEL: self._battery,
-            ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            ATTR_FW_VER: self._fw_ver,
-            ATTR_LQI: self._lqi,
-            ATTR_TVOC: self._total_volatile_organic_compounds,
-            ATTR_VOLTAGE: self._voltage,
-        }
-        return attrs
+    # @property
+    # def extra_state_attributes(self):
+    #     """Return the state attributes."""
+    #     attrs = {
+    #         ATTR_BATTERY_LEVEL: self._battery,
+    #         ATTR_CHIP_TEMPERATURE: self._chip_temperature,
+    #         ATTR_FW_VER: self._fw_ver,
+    #         ATTR_LQI: self._lqi,
+    #         ATTR_TVOC: self._total_volatile_organic_compounds,
+    #         ATTR_VOLTAGE: self._voltage,
+    #     }
+    #     return attrs
 
     def update(self, data: dict = None):
         """Update the sensor state."""
