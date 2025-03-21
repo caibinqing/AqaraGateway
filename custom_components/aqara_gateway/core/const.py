@@ -35,7 +35,6 @@ DOMAIN = "aqara_gateway"
 CONF_HOST = "host"
 CONF_DEBUG = "debug"
 CONF_MODEL = "model"
-CONF_STATS = "stats"
 CONF_NOFFLINE = "noffline"
 CONF_PATCHED_FW = "patched_firmware"
 

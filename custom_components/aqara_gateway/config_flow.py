@@ -5,7 +5,6 @@ import socket
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig, NumberSelectorMode
 from homeassistant.config_entries import (
     CONN_CLASS_LOCAL_PUSH,
     ConfigFlow,
@@ -20,7 +19,7 @@ from homeassistant.util.network import is_ip_address
 from .core import gateway
 from .core.const import (
     DOMAIN, OPT_DEVICE_NAME, CONF_MODEL, OPT_DEBUG,
-    CONF_DEBUG, CONF_STATS, CONF_NOFFLINE, SUPPORTED_MODELS,
+    CONF_DEBUG, CONF_NOFFLINE, SUPPORTED_MODELS,
     CONF_PATCHED_FW, CONF_VRF_UNITS, VRF_DIP_MIN, VRF_DIP_MAX
 )
 from .core.utils import Utils
