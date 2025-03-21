@@ -259,49 +259,15 @@ class GatewaySensor(GatewayGenericDevice, RestoreSensor):
         if attr in DESCRIPTIONS:
             self.entity_description = DESCRIPTIONS[attr]
 
-        self.with_attr = bool(device['type'] not in (
-            'gateway', 'zigbee')) and bool(attr not in (
-                'key_id', 'battery', 'power', 'consumption'))
-
-        if self.with_attr:
-            self._battery = None
-            self._chip_temperature = None
-            self._lqi = None
-            self._voltage = None
-
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         if last_state := await self.async_get_last_sensor_data():
             self._attr_native_value = last_state.native_value
         await super().async_added_to_hass()
 
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        if self.with_attr:
-            attrs = {
-                ATTR_BATTERY_LEVEL: self._battery,
-                ATTR_LQI: self._lqi,
-                ATTR_VOLTAGE: self._voltage,
-                ATTR_CHIP_TEMPERATURE: self._chip_temperature,
-            }
-            return attrs
-        return None
-
-    def update(self, data: dict):
+    def update(self, data: dict) -> None:
         """update sensor."""
         for key, value in data.items():
-            if self.with_attr:
-                if key == BATTERY:
-                    self._battery = value
-                if key == CHIP_TEMPERATURE:
-                    self._chip_temperature = value
-                if key == LQI:
-                    self._lqi = value
-                if key == VOLTAGE:
-                    self._voltage = format(
-                        float(value) / 1000, '.3f') if isinstance(
-                        value, (int, float)) else None
             if self._attr == POWER and LOAD_POWER in data:
                 self._attr_native_value = data[LOAD_POWER]
             if self._attr == key:
