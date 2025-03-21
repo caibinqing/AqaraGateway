@@ -243,9 +243,6 @@ ICONS = {
     'key_id': 'mdi:key',
     'lock': 'mdi:lock',
     'lock_event': 'mdi:lock',
-    'hear_rate': 'mdi:heart-pulse',
-    'breath_rate': 'mdi:lungs',
-    'body_movements': 'mdi:page-layout-body',
     'movements': 'mdi:page-layout-body'
 }
 
