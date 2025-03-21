@@ -1,7 +1,5 @@
 """Support for Xiaomi Aqara sensors."""
 
-from datetime import timedelta
-
 from homeassistant.components.sensor import (
     RestoreSensor,
     SensorDeviceClass,
@@ -23,7 +21,6 @@ from homeassistant.const import (
     UnitOfPressure,
     UnitOfTemperature,
 )
-from homeassistant.util.dt import now
 
 from . import DOMAIN, GatewayGenericDevice
 from .core.const import (
@@ -63,17 +60,13 @@ from .core.const import (
 )
 from .core.gateway import Gateway
 from .core.lock_data import DEVICE_MAPPINGS, LOCK_NOTIFICATION, WITH_LI_BATTERY
-from .core.utils import CLUSTERS, Utils
+from .core.utils import Utils
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """ setup config entry """
     def setup(gateway: Gateway, device: dict, attr: str):
-        if attr == 'gateway':
-            async_add_entities([GatewayStats(gateway, device, attr)])
-        elif attr == 'zigbee':
-            async_add_entities([ZigbeeStats(gateway, device, attr)])
-        elif attr == 'gas density':
+        if attr == 'gas density':
             async_add_entities([GatewayGasSensor(gateway, device, attr)])
         elif attr == 'lock':
             async_add_entities([GatewayLockSensor(gateway, device, attr)])
@@ -269,122 +262,6 @@ class GatewayGasSensor(GatewaySensor):
         if 'gas' in data:
             self._attr_native_value = data['gas']
         self.async_write_ha_state()
-
-
-class GatewayStats(GatewaySensor):
-    """ Aqara Gateway status """
-
-    _attrs = None
-
-    @property
-    def available(self):
-        """return available."""
-        return True
-
-    async def async_added_to_hass(self):
-        """add to hass."""
-        self.gateway.add_update('lumi.0', self.update)
-        self.gateway.add_stats('lumi.0', self.update)
-        # update available when added to Hass
-        self.update()
-
-    async def async_will_remove_from_hass(self) -> None:
-        """remove from hass."""
-        self.gateway.remove_update('lumi.0', self.update)
-        self.gateway.remove_stats('lumi.0', self.update)
-
-    def update(self, data: dict | None = None):
-        """update gateway stats."""
-        # empty data - update state to available time
-        if not data:
-            self._attr_native_value = (
-                now().isoformat(timespec='seconds') if self.gateway.available else None
-            )
-        else:
-            self._attrs.update(data)
-
-        self.async_write_ha_state()
-
-
-class ZigbeeStats(GatewaySensor):
-    """ Aqara Gateway Zigbee status """
-
-    last_seq1 = None
-    last_seq2 = None
-    _attrs = None
-
-    @property
-    def available(self):
-        """return available."""
-        return True
-
-    async def async_added_to_hass(self):
-        """add to hass."""
-        if not self._attrs:
-            ieee = '0x' + self.device['did'][5:].rjust(16, '0').upper()
-            self._attrs = {
-                'ieee': ieee,
-                'nwk': None,
-                'msg_received': 0,
-                'msg_missed': 0,
-                'unresponsive': 0,
-                'last_missed': 0,
-            }
-
-        self.gateway.add_stats(self._attrs['ieee'], self.update)
-
-    async def async_will_remove_from_hass(self) -> None:
-        """remove from hass."""
-        self.gateway.remove_stats(self._attrs['ieee'], self.update)
-
-    def update(self, data: dict) -> None:
-        """update zigbee states."""
-        if 'sourceAddress' in data:
-            self._attrs['nwk'] = data['sourceAddress']
-            self._attrs['link_quality'] = data['linkQuality']
-            self._attrs['rssi'] = data['rssi']
-
-            cid = int(data['clusterId'], 0)
-            self._attrs['last_msg'] = cluster = CLUSTERS.get(cid, cid)
-
-            self._attrs['msg_received'] += 1
-
-            # For some devices better works APSCounter, for other - sequence
-            # number in payload. Sometimes broken messages arrived.
-            try:
-                new_seq1 = int(data['APSCounter'], 0)
-                raw = data['APSPlayload']
-                manufact_spec = int(raw[2:4], 16) & 4
-                new_seq2 = int(raw[8:10] if manufact_spec else raw[4:6], 16)
-                if self.last_seq1 is not None:
-                    miss = min(
-                        (new_seq1 - self.last_seq1 - 1) & 0xFF,
-                        (new_seq2 - self.last_seq2 - 1) & 0xFF
-                    )
-                    self._attrs['msg_missed'] += miss
-                    self._attrs['last_missed'] = miss
-                    if miss:
-                        self.debug(
-                            f"Msg missed: {self.last_seq1} => {new_seq1}, "
-                            f"{self.last_seq2} => {new_seq2}, {cluster}"
-                        )
-                self.last_seq1 = new_seq1
-                self.last_seq2 = new_seq2
-
-            except:
-                pass
-
-            self._attr_native_value = now().isoformat(timespec='seconds')
-
-        elif 'parent' in data:
-            ago = timedelta(seconds=data.pop('ago'))
-            self._attr_native_value = (now() - ago).isoformat(timespec='seconds')
-            self._attrs.update(data)
-
-        elif data.get('deviceState') == 17:
-            self._attrs['unresponsive'] += 1
-
-        self.schedule_update_ha_state()
 
 
 class GatewayLockSensor(GatewaySensor):
