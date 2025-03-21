@@ -19,7 +19,7 @@ from homeassistant.util.network import is_ip_address
 from .core import gateway
 from .core.const import (
     DOMAIN, OPT_DEVICE_NAME, CONF_MODEL, OPT_DEBUG,
-    CONF_DEBUG, CONF_STATS, CONF_NOFFLINE, SUPPORTED_MODELS,
+    CONF_DEBUG, CONF_NOFFLINE, SUPPORTED_MODELS,
     CONF_PATCHED_FW
 )
 from .core.utils import Utils
@@ -279,7 +279,6 @@ class OptionsFlowHandler(OptionsFlow):
                     CONF_PASSWORD: self._password,
                     CONF_TOKEN: self._token,
                     CONF_MODEL: self._model,
-                    # CONF_STATS: user_input.get(CONF_STATS, False),
                     CONF_DEBUG: user_input.get(CONF_DEBUG, []),
                     CONF_NOFFLINE: user_input.get(CONF_NOFFLINE, True),
                 },
@@ -288,7 +287,6 @@ class OptionsFlowHandler(OptionsFlow):
         self._password = self.config_entry.options.get(CONF_PASSWORD, '')
         self._token = self.config_entry.options.get(CONF_TOKEN, '')
         self._model = self.config_entry.options.get(CONF_MODEL, '')
-        # stats = self.config_entry.options.get(CONF_STATS, False)
         debug = self.config_entry.options.get(CONF_DEBUG, [])
         ignore_offline = self.config_entry.options.get(CONF_NOFFLINE, True)
 
@@ -299,7 +297,6 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Required(CONF_HOST, default=self._host): str,
                     vol.Optional(CONF_PASSWORD, default=self._password): str,
                     vol.Optional(CONF_TOKEN, default=self._token): str,
-                    # vol.Required(CONF_STATS, default=stats): bool,
                     vol.Optional(CONF_DEBUG, default=debug): cv.multi_select(
                         OPT_DEBUG
                     ),
