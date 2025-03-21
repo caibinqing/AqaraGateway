@@ -303,6 +303,8 @@ VRF_DIP_MAX = 64
 
 # Cover
 RUN_STATES = {0: CoverState.CLOSING, 1: CoverState.OPENING, 2: "stop", 3: "hinder_stop"}
+CHARGING_STATUS = {0: "Not Charging", 1: "Charging", 2: "Stop Charging", 3: "Charging Failure"}
+MOTOR_STROKES = {0: "No stroke", 1: "The stroke has been set"}
 
 # Switch Sensor
 # https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/converters/fromZigbee.js#L4738
