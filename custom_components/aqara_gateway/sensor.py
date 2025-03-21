@@ -81,8 +81,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             async_add_entities([GatewayKeyIDSensor(gateway, device, attr)])
         elif attr == 'lock_event':
             async_add_entities([GatewayLockEventSensor(gateway, device, attr)])
-        elif attr in ('hear_rate', 'breath_rate', 'body_movements'):
-            async_add_entities([GatewaySleepMonitorSensor(gateway, device, attr)])
         elif attr == 'illuminance':
             if (device['type'] == 'gateway' and
                     Utils.gateway_illuminance_supported(device['model'])):
@@ -234,18 +232,6 @@ DESCRIPTIONS = {
     'occupancy_region': SensorEntityDescription(
         key='occupancy_region',
         icon='mdi:square-opacity',
-    ),
-    'hear_rate': SensorEntityDescription(
-        key='hear_rate',
-        icon='mdi:heart-pulse',
-    ),
-    'breath_rate': SensorEntityDescription(
-        key='breath_rate',
-        icon='mdi:lungs',
-    ),
-    'body_movements': SensorEntityDescription(
-        key='body_movements',
-        icon='mdi:page-layout-body',
     ),
 }
 
@@ -491,19 +477,6 @@ class GatewayLockEventSensor(GatewaySensor):
                 notify = LOCK_NOTIFICATION[key]
                 self._attr_native_value = notify.get(str(value), None) if notify.get(
                     str(value), None) else notify.get("default")
-
-        self.async_write_ha_state()
-
-
-class GatewaySleepMonitorSensor(GatewaySensor):
-    """Representation of a Aqara Sleep Monitor."""
-
-    def update(self, data: dict) -> None:
-        """ update sleep monitor state """
-        # handle available change
-        for key, value in data.items():
-            if key == self._attr:
-                self._attr_native_value = value
 
         self.async_write_ha_state()
 
