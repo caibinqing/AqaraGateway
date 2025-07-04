@@ -344,6 +344,7 @@ DEVICES = [{
     'lumi.light.acn024': ["Aqara", "Spotlight T2 (24 degree)", "LTSZNSD02LM"],
     'lumi.light.acn023': ["Aqara", "Spotlight T2 (15 degree)", "LTSZNSD01LM"],
     'lumi.light.acn131': ["Aqara", "Downlight T3", "LGYCDD02LM"],
+    'lumi.light.acn132': ["Aqara", "Colorful Light Strip T3", "LGYCDD01LM"],
     'lumi.light.acn130': ["Aqara", "Spotlight T3 (36 degree)", "LGYCDD03LM"],
     'lumi.light.acn129': ["Aqara", "Spotlight T3 (24 degree)", "LGYCDD04LM"],
     'lumi.light.acn128': ["Aqara", "Spotlight T3", "LGYCDD05LM"],
@@ -580,6 +581,7 @@ DEVICES = [{
     'lumi.curtain.hagl07': ["Aqara", "Curtain C2", "ZNCLDJ14LM"],   # @darkbao
     'lumi.curtain.vagl02': ["Aqara", "Curtain T1", "ZNGZDJ15LM"],
     'lumi.curtain.acn04': ["Aqara", "Curtain C3", "ZNCLDJ01LM"],
+    'lumi.curtain.acn015': ["Aqara", "Curtain T2", "ZNGZDJ16LM"],
     'params': [
         ['1.1.85', 'curtain_level', 'position', None],
         ['14.2.85', None, 'motor', 'cover'],
@@ -1076,6 +1078,16 @@ DEVICES_AIOT = [{
         [None, None, 'switch', 'binary_sensor'],
     ]
 }, {
+    'lumi.switch.agl004': ["Aqara", "Single Wall Switch H2 US", "WS-K02E"],
+    'params': [
+        ['0.12.85', 'load_power', 'power', 'sensor'],
+        ['0.13.85', None, 'consumption', 'sensor'],
+        ['4.1.85', 'channel_0', 'channel 1', 'switch'],
+        ['4.4.85', 'channel_0_lock', 'channel 1 Lock', 'switch'],
+        ['13.21.85', None, 'button_1', None],
+        [None, None, 'switch', 'binary_sensor'],
+    ]
+}, {
     # with neutral wire
     'lumi.switch.acn047': ["Aqara", "Double Wall Switch Z1", "ZNQBKG37LM"], # @justbin95
     'lumi.switch.acn057': ["Aqara", "Canon Smart Wall Switch Z1 Pro (Double-button Version)", "ZNQBKG43LM"],
@@ -1084,6 +1096,19 @@ DEVICES_AIOT = [{
         ['0.13.85', None, 'consumption', 'sensor'],
         ['4.1.85', 'channel_0', 'channel 1', 'switch'],
         ['4.2.85', 'channel_1', 'channel 2', 'switch'],
+        ['13.21.85', None, 'button_1', None],
+        ['13.22.85', None, 'button_2', None],
+        [None, None, 'switch', 'binary_sensor'],
+    ]
+}, {
+    'lumi.switch.agl005': ["Aqara", "Double Wall Switch H2 US", "WS-K03E"],
+    'params': [
+        ['0.12.85', 'load_power', 'power', 'sensor'],
+        ['0.13.85', None, 'consumption', 'sensor'],
+        ['4.1.85', 'channel_0', 'channel 1', 'switch'],
+        ['4.2.85', 'channel_1', 'channel 2', 'switch'],
+        ['4.4.85', 'channel_0_lock', 'channel 1 Lock', 'switch'],
+        ['4.5.85', 'channel_1_lock', 'channel 2 Lock', 'switch'],
         ['13.21.85', None, 'button_1', None],
         ['13.22.85', None, 'button_2', None],
         [None, None, 'switch', 'binary_sensor'],
@@ -1106,6 +1131,7 @@ DEVICES_AIOT = [{
 }, {
     # with neutral wire
     'lumi.switch.acn059': ["Aqara", "Canon Smart Wall Switch Z1 Pro (Four-button Version)", "ZNQBKG45LM"],
+    'lumi.switch.agl006': ["Aqara", "Smart Wall Switch H2 (Four-button Version)", ""],
     'params': [
         ['0.12.85', 'load_power', 'power', 'sensor'],
         ['0.13.85', None, 'consumption', 'sensor'],
@@ -1336,7 +1362,7 @@ DEVICES_AIOT = [{
 }, {
     # motion sensor with illuminance
     'lumi.motion.agl02': ["Aqara", "Motion Sensor T1", "RTCGQ12LM"],  # @miniknife88
-    'lumi.motion.acn001': ["Aqara", "Motion Sensor E1", "RTCGO15LM"],
+    'lumi.motion.acn001': ["Aqara", "Motion Sensor E1", "RTCGQ15LM"],
     'params': [
         ['0.3.85', 'lux', 'illuminance_lux', None],
         ['0.4.85', 'illumination', 'illuminance', 'sensor'],
@@ -1461,6 +1487,19 @@ DEVICES_AIOT = [{
         [None, 'yuba', 'yuba', 'climate'],
     ]
 }, {
+    'aqara.airrtc.acn02': ["Aqara", "Air Conditioning T1", ""],
+    'params': [
+        ['0.1.85', None, 'current_temperature', None],
+        ['1.1.85', None, 'target_temperature', None],
+        ['3.1.85', None, 'online', None],
+        ['4.1.85', 'power_status', 'power', None],
+        ['13.2.85', None, 'address', None],
+        ['14.1.85', None, 'fan_mode', None],
+#        ['14.39.85', None, 'fan_mode', None],
+        ['14.140.85', None, 'mode', None],
+        [None, 'ac_state', 'climate', 'climate'],
+    ]
+}, {
     'aqara.toilet.acn002': ["Aqara", "Smart Toilet T1", "ZNTL01LM"],
     'params': [
         ['4.1.85', 'ctrl_ch0_status', 'power', 'switch'],
@@ -1480,6 +1519,13 @@ DEVICES_AIOT = [{
         ['4.20.85', 'set_lock', 'child lock', 'switch'],
         ['4.23.85', 'set_mode', 'massage', 'switch'],
         ['4.31.85', 'bool_switch_first', 'back and leg', 'switch'],
+    ]
+}, {
+    'aqara.vent.eicn01': ["Aqara", "Ventilation Mechanical Controllor", ""],
+    'params': [
+        ['4.1.85', 'power_status', 'power', None],
+        ['14.39.85', None, 'fan_mode', None],
+        [None, 'fan', 'fan', 'fan'],
     ]
 }]
 
