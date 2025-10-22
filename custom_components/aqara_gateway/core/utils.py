@@ -51,11 +51,13 @@ DEVICES = [{
     'lumi.gateway.acn012': ["Aqara", "Gateway M3", "ZHWG24LM"],
     'lumi.gateway.agl004': ["Aqara", "Gateway M3", "HM-G01D"],
     'lumi.gateway.acn008': ["Aqara", "Gateway M1S Gen2", "ZHWG22LM"],
+    'lumi.gateway.agl002': ["Aqara", "Gateway M1S Gen2", "HM1S-G02"],
     'lumi.gateway.acn011': ["Aqara", "Outlet Hub V1", "AHWG11LM"],
     'lumi.camera.acn008': ["Aqara", "Camera Hub G5 Pro (WiFi)", "ZNSXJ21LM"],
     'lumi.camera.acn009': ["Aqara", "Camera Hub G5 Pro (PoE)", "ZNSXJ18LM"],
     'lumi.camera.acn010': ["Aqara", "Camera Hub G5 Pro (PoE)", "CH-C03D/E"],
     'lumi.camera.acn011': ["Aqara", "Camera Hub G5 Pro (WiFi)", "CH-C07D/E"],
+    'lumi.gateway.agl010': ["Aqara", "Hub M100", "ZHWG25LM"],
     'params': [
         ['8.0.2012', None, 'power_tx', None],
         ['8.0.2024', None, 'channel', None],
@@ -1017,7 +1019,6 @@ DEVICES_AIOT = [{
     'lumi.switch.b2nacn01': ["Aqara", "Double Wall Switch T1", "QBKG20LM"],
     'lumi.switch.acn045': ["Aqara", "Double Wall Switch J1", ""],
     'lumi.switch.acn049': ["Aqara", "Two-way Control module T2", "ZNQBKG39LM"],
- #   'lumi.switch.acn047': ["Aqara", "Two-way Control module T2", "LLKZMK12LM"],
     'params': [
         ['4.1.85', 'channel_0', 'channel 1', 'switch'],
         ['4.2.85', 'channel_1', 'channel 2', 'switch'],
@@ -1089,7 +1090,8 @@ DEVICES_AIOT = [{
     ]
 }, {
     # with neutral wire
-    'lumi.switch.acn047': ["Aqara", "Double Wall Switch Z1", "ZNQBKG37LM"], # @justbin95
+#    'lumi.switch.acn047': ["Aqara", "Double Wall Switch Z1", "ZNQBKG37LM"], # @justbin95
+    'lumi.switch.acn047': ["Aqara", "Two-way Control module T2", "LLKZMK12LM"],
     'lumi.switch.acn057': ["Aqara", "Canon Smart Wall Switch Z1 Pro (Double-button Version)", "ZNQBKG43LM"],
     'params': [
         ['0.12.85', 'load_power', 'power', 'sensor'],
