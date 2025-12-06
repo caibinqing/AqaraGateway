@@ -14,7 +14,7 @@ from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.device_registry import DeviceRegistry
 from miio import Device, DeviceException
 
-from .const import AIOT_MODELS, SIGMASTAR_MODELS
+from .const import AIOT_MODELS, SIGMASTAR_MODELS, NO_ALARM_MODE_MODELS, INFRARED_SUPPORTED_MODELS
 
 SOFT_HACK_REALTEK = {"ssid": "\"\"", "pswd": "123123 ; passwd -d admin ; echo enable > /sys/class/tty/tty/enable; telnetd"}
 SOFT_HACK_SIGMASTAR = {"ssid": "\"\"", "pswd": "123123 ; passwd -d root ; /bin/riu_w 101e 53 3012 ; telnetd"}
@@ -46,6 +46,7 @@ DEVICES = [{
     'lumi.camera.gwpagl01': ["Aqara", "Camera Hub G3", "ZNSXJ13LM"],  # tested
     'lumi.camera.gwpgl1': ["Aqara", "Camera Hub G3", "CH-H03"],
     'lumi.camera.agl001': ["Aqara", "Camera Hub G2H Pro", "ZNSXJ15LM"],
+    'lumi.camera.acn003': ["Aqara", "Camera Hub G2H Pro", "ZNSXJ15LM"],
     'lumi.gateway.iragl8': ["Aqara", "Gateway M2 2022", "ZHWG19LM"],  # tested
     'lumi.gateway.acn004': ["Aqara", "Gateway M1S 2022", "ZHWG20LM"],  # tested
     'lumi.gateway.acn012': ["Aqara", "Gateway M3", "ZHWG24LM"],
@@ -57,7 +58,12 @@ DEVICES = [{
     'lumi.camera.acn009': ["Aqara", "Camera Hub G5 Pro (PoE)", "ZNSXJ18LM"],
     'lumi.camera.acn010': ["Aqara", "Camera Hub G5 Pro (PoE)", "CH-C03D/E"],
     'lumi.camera.acn011': ["Aqara", "Camera Hub G5 Pro (WiFi)", "CH-C07D/E"],
+    'lumi.gateway.agl008': ["Aqara", "Hub M100", "ZHWG24LM"],
     'lumi.gateway.agl010': ["Aqara", "Hub M100", "ZHWG25LM"],
+    'lumi.camera.acn017': ["Aqara", "Doorbell G410", "ZNKSML05"],
+    'lumi.camera.agl006': ["Aqara", "Doorbell G410", "CH-C09D"],   # Global version
+    'lumi.gateway.agl011': ["Aqara", "Gateway M200", "AG047GLB02"],   # Global version
+    'lumi.gateway.agl013': ["Aqara", "Gateway M300", "HM-G04E"],
     'params': [
         ['8.0.2012', None, 'power_tx', None],
         ['8.0.2024', None, 'channel', None],
@@ -959,6 +965,24 @@ DEVICES = [{
         ['14.8.85', None, 'motor', 'cover'],
     ]
 }, {
+    'lumi.curtain.acn010': ["Aqara", "Organ™ Smart Curtain Motor C4", "DSKDJ11LM"],
+    'params': [
+        ['0.57.85', 'curtain_ch0_level', 'position', None],
+        ['0.58.85', 'curtain_ch1_level', 'position', None],
+        ['13.4.85', 'run_status', 'run_state', None],
+        ['13.11.85', 'ch0_run_state', 'run_state', None],
+        ['0.21.85', '0.21.85', '0.21.85', None],
+        ['13.14.85', '13.14.85', '13.14.85', None],
+        ['13.15.85', '13.15.85', '13.15.85', None],
+        ['13.21.85', 'ch1_run_state', 'run_state', None],
+        ['13.13.85', None, 'mode', None],
+        ['14.11.85', None, 'ch0_polarity', None],
+        ['14.21.85', None, 'ch1_polarity', None],
+        ['14.35.85', None, 'speed', None],
+        ['1.11.85', None, 'ch0_motor', 'cover'],
+        ['1.21.85', None, 'ch1_motor', 'cover'],
+    ]
+}, {
     'lumi.curtain.acn011': ["Aqara", "Smart Vertical Blinds Controller H1", "ZNMHLDJ01LM"],
     'params': [
         ['0.1.85', None, 'working_time', None],
@@ -1086,6 +1110,7 @@ DEVICES_AIOT = [{
         ['4.1.85', 'channel_0', 'channel 1', 'switch'],
         ['4.4.85', 'channel_0_lock', 'channel 1 Lock', 'switch'],
         ['13.21.85', None, 'button_1', None],
+        ['13.22.85', None, 'button_2', None],
         [None, None, 'switch', 'binary_sensor'],
     ]
 }, {
@@ -1113,6 +1138,8 @@ DEVICES_AIOT = [{
         ['4.5.85', 'channel_1_lock', 'channel 2 Lock', 'switch'],
         ['13.21.85', None, 'button_1', None],
         ['13.22.85', None, 'button_2', None],
+        ['13.23.85', None, 'button_3', None],
+        ['13.24.85', None, 'button_4', None],
         [None, None, 'switch', 'binary_sensor'],
     ]
 }, {
@@ -2072,22 +2099,14 @@ class Utils:
     def gateway_alarm_mode_supported(model: str) -> Optional[bool]:
         """ return the gateway alarm mode supported """
         #  basic_cli not support
-        if model not in (
-            'lumi.camera.gwagl02', 'lumi.camera.gwag03',
-            'lumi.camera.gwpagl01', 'lumi.camera.gwpgl1',
-            'lumi.camera.agl001'
-        ):
+        if model not in NO_ALARM_MODE_MODELS:
             return True
         return False
 
     @staticmethod
     def gateway_infrared_supported(model: str) -> Optional[bool]:
         """ return the gateway infrared supported """
-        if model in ('lumi.aircondition.acn05', 'lumi.gateway.iragl5',
-                        'lumi.gateway.iragl7', 'lumi.gateway.iragl01',
-                        'lumi.gateway.iragl8', 'lumi.gateway.agl001',
-                        'lumi.camera.gwpagl01', 'lumi.camera.gwpgl1',
-                        'lumi.gateway.acn012', 'lumi.gateway.agl004'):
+        if model in INFRARED_SUPPORTED_MODELS:
             return True
         return False
 
