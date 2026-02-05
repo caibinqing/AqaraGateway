@@ -81,7 +81,7 @@ DEVICES = [{
         [None, 'light_level', 'brightness', None],
         [None, 'hs_color', 'hs_color', None],
         [None, 'rgb_color', 'rgb_color', 'light'],
-        [None, None, 'alarm', 'alarm_control_panel'],
+#        [None, None, 'alarm', 'alarm_control_panel'],
         [None, None, 'pair', 'remote'],
     ]
 }, {
@@ -520,6 +520,16 @@ DEVICES = [{
         ['4.1.85', None, 'monitoring_mode', 'select'],
         ['4.2.85', None, 'reverted_mode', 'select'],
         ['14.47.85', None, 'approaching_distance', 'select'],
+    ]
+}, {
+    'lumi.sensor_occupy.agl8': ["Aqara", "AI Presence Detector FP300", "PS-S04E"],
+    'params': [
+        ['0.1.85', 'temperature', 'temperature', 'sensor'],
+        ['0.2.85', 'humidity', 'humidity', 'sensor'],
+        ['0.3.85', None, 'illuminance', 'sensor'],
+        ['8.0.2001', 'battery', 'battery', 'sensor'],
+        ['3.2.85', None, 'motion', 'binary_sensor'],
+        ['3.51.85', None, 'occupancy', 'binary_sensor'],
     ]
 }, {
     # water leak sensor
@@ -1555,6 +1565,12 @@ DEVICES_AIOT = [{
         ['4.1.85', 'power_status', 'power', None],
         ['14.39.85', None, 'fan_mode', None],
         [None, 'fan', 'fan', 'fan'],
+    ]
+}, {
+    'lumi.valve.agl001': ["Aqara", "Valve Controller T1", "VC-X01D"],
+    'params': [
+        ['4.1.85', 'power_status', 'switch', 'switch'],
+        ['8.0.2001', 'battery', 'battery', 'sensor'],
     ]
 }]
 
