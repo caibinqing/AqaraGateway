@@ -95,18 +95,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     if entry.entry_id not in hass.data[DOMAIN]:
         return True
 
-    # remove all stats entities if disable stats
-    if not entry.options.get('stats'):
-        suffix = ('_gateway', '_zigbee')
-        registry: EntityRegistry = hass.data['entity_registry']
-        remove = [
-            entity.entity_id
-            for entity in list(registry.entities.values())
-            if entity.config_entry_id == entry.entry_id and
-                entity.unique_id.endswith(suffix)
-        ]
-        for entity_id in remove:
-            registry.async_remove(entity_id)
+    # # remove all stats entities if disable stats
+    # if not entry.options.get('stats'):
+    #     suffix = ('_gateway', '_zigbee')
+    #     registry: EntityRegistry = hass.data['entity_registry']
+    #     remove = [
+    #         entity.entity_id
+    #         for entity in list(registry.entities.values())
+    #         if entity.config_entry_id == entry.entry_id and
+    #             entity.unique_id.endswith(suffix)
+    #     ]
+    #     for entity_id in remove:
+    #         registry.async_remove(entity_id)
 
     gateway = hass.data[DOMAIN][entry.entry_id]
     gateway.stop()

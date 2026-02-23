@@ -454,10 +454,10 @@ class Gateway:
 
                     self.setups[domain](self, device, attr)
 
-            if self.options.get('stats'):
-                while 'sensor' not in self.setups:
-                    await asyncio.sleep(1)
-                self.setups['sensor'](self, device, device['type'])
+            # if self.options.get('stats'):
+            #     while 'sensor' not in self.setups:
+            #         await asyncio.sleep(1)
+            #     self.setups['sensor'](self, device, device['type'])
 
     def add_stats(self, ieee: str, handler):
         """ add gateway stats """

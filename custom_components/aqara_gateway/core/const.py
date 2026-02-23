@@ -35,7 +35,6 @@ DOMAIN = "aqara_gateway"
 CONF_HOST = "host"
 CONF_DEBUG = "debug"
 CONF_MODEL = "model"
-CONF_STATS = "stats"
 CONF_NOFFLINE = "noffline"
 CONF_PATCHED_FW = "patched_firmware"
 
@@ -243,9 +242,6 @@ ICONS = {
     'key_id': 'mdi:key',
     'lock': 'mdi:lock',
     'lock_event': 'mdi:lock',
-    'hear_rate': 'mdi:heart-pulse',
-    'breath_rate': 'mdi:lungs',
-    'body_movements': 'mdi:page-layout-body',
     'movements': 'mdi:page-layout-body'
 }
 
