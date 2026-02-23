@@ -9,49 +9,26 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
-from homeassistant.const import (
-    ATTR_BATTERY_LEVEL,
-    STATE_CLOSING,
-    STATE_OPENING,
-    STATE_UNKNOWN
-)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import GatewayGenericDevice
+from .core.const import DOMAIN
 from .core.gateway import Gateway
-from .core.const import (
-    ATTR_FW_VER,
-    ATTR_LQI,
-    ATTR_CHIP_TEMPERATURE,
-    BATTERY,
-    CHIP_TEMPERATURE,
-    DOMAIN,
-    FW_VER,
-    LQI,
-    RUN_STATES,
-)
-
-ATTR_POLARITY = 'polarity'
-ATTR_MOTOR_STROKE = 'motor stroke'
-ATTR_CHARGING_STATUS = 'charging status'
-ATTR_WORKING_TIME = 'working time'
-POLARITY = 'polarity'
-POSITION = 'position'
-TILT_POSITION = 'tilt_position'
-CHARGING_STATUS = 'charging_status'
-WORKING_TIME = 'working_time'
-MOTOR_STROKE = 'motor_stroke'
-RUN_STATE = 'run_state'
-
-CHARGING_STATUS_ = {0: "Not Charging", 1: "Charging", 2: "Stop Charging", 3: "Charging Failure"}
-MOTOR_STROKES = {0: "No stroke", 1: "The stroke has been set"}
-
-DEVICES_WITH_BATTERY = ['lumi.curtain.acn002', 'lumi.curtain.acn003', 'lumi.curtain.agl001']
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+ATTR_RUN_STATE = 'run_state'
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Perform the setup for Xiaomi devices."""
-    def setup(gateway: Gateway, device: dict, attr: str):
+    def setup(gateway: Gateway, device: dict, attr: str) -> None:
         if device['model'] == 'lumi.curtain.acn002':
             async_add_entities([AqaraRollerShadeE1(gateway, device, attr)])
         elif device['model'] == 'lumi.curtain.acn011':
@@ -66,51 +43,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     aqara_gateway.add_setup('cover', setup)
 
 
-async def async_unload_entry(hass, entry):
-    # pylint: disable=unused-argument
-    """ unload entry """
-    return True
-
-
 class XiaomiGenericCover(GatewayGenericDevice, CoverEntity, RestoreEntity):
     """Representation of a XiaomiGenericCover."""
 
-    def __init__(self, gateway, device, atrr):
-        """Initialize the XiaomiGenericCover."""
-        self._pos = None
-        self._state = None
-        self._chip_temperature = None
-        self._fw_ver = None
-        self._lqi = None
-        self._polarity = None
-        self._motor_stroke = None
-        self._charging_status = None
-        self._working_time = None
-        if device['model'] in DEVICES_WITH_BATTERY:
-            self._battery = None
-        super().__init__(gateway, device, atrr)
-
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         if (last_state := await self.async_get_last_state()) is not None:
-            self._pos = last_state.attributes.get(ATTR_CURRENT_POSITION)
-            self._attrs[ATTR_CURRENT_POSITION] = self._pos
+            if ATTR_CURRENT_POSITION in last_state.attributes:
+                position = last_state.attributes[ATTR_CURRENT_POSITION]
+                self._attr_current_cover_position = position
         await super().async_added_to_hass()
-
-    @property
-    def current_cover_position(self):
-        """Return the current position of the cover."""
-        return self._attrs.get(ATTR_CURRENT_POSITION)
-
-    @property
-    def is_opening(self):
-        """Return if the cover is opening."""
-        return self._state == STATE_OPENING
-
-    @property
-    def is_closing(self):
-        """Return if the cover is closing."""
-        return self._state == STATE_CLOSING
 
     @property
     def is_closed(self) -> bool | None:
@@ -119,81 +61,52 @@ class XiaomiGenericCover(GatewayGenericDevice, CoverEntity, RestoreEntity):
             return None
         return position < 5
 
-    def update(self, data: dict = None):
-        """ update state """
-        for key, value in data.items():
-            if key == BATTERY:
-                if hasattr(self, "_battery"):
-                    self._battery = value
-            if key == CHIP_TEMPERATURE:
-                self._chip_temperature = value
-            if key == FW_VER or key == 'back_version':
-                self._fw_ver = value
-            if key == LQI:
-                self._lqi = value
-            if key == POLARITY:
-                self._polarity = value
-            if key == MOTOR_STROKE:
-                self._motor_stroke = MOTOR_STROKES.get(value)
-            if key == CHARGING_STATUS:
-                self._charging_status = CHARGING_STATUS_.get(value)
-            if key == WORKING_TIME:
-                self._working_time = value
-            if key == POSITION:
-                self._pos = value
-            if key == RUN_STATE:
-                self._state = RUN_STATES.get(value, STATE_UNKNOWN)
-
+    def update(self, data: dict) -> None:
+        """Update state."""
+        if ATTR_POSITION in data:
+            self._attr_current_cover_position = data[ATTR_POSITION]
+        if ATTR_RUN_STATE in data:
+            value = data[ATTR_RUN_STATE]
+            self._attr_is_opening = value == 1
+            self._attr_is_closing = value == 0
         self.schedule_update_ha_state()
 
-    def close_cover(self, **kwargs):
-        """Close the cover."""
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close cover."""
         self.gateway.send(self.device, {'position': 0})
 
-    def open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
         self.gateway.send(self.device, {'position': 100})
 
-    def stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         self.gateway.send(self.device, {'motor': 2})
 
-    def set_cover_position(self, **kwargs):
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the cover to a specific position."""
-        position = kwargs.get(ATTR_POSITION)
-        self.gateway.send(self.device, {'position': position})
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        self._attrs[ATTR_CURRENT_POSITION] = self._pos
-        self._attrs[ATTR_CHIP_TEMPERATURE] = self._chip_temperature
-        self._attrs[ATTR_FW_VER] = self._fw_ver
-        self._attrs[ATTR_LQI] = self._lqi
-        self._attrs[ATTR_POLARITY] = self._polarity
-        self._attrs[ATTR_MOTOR_STROKE] = self._motor_stroke
-        self._attrs[ATTR_CHARGING_STATUS] = self._charging_status
-        self._attrs[ATTR_WORKING_TIME] = self._working_time
-        if hasattr(self, "_battery"):
-            self._attrs[ATTR_BATTERY_LEVEL] = self._battery
-        return self._attrs
+        if (position := kwargs.get(ATTR_POSITION)) is not None:
+            self.gateway.send(self.device, {'position': position})
 
 
 class XiaomiCoverMIOT(XiaomiGenericCover):
-    def open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open the cover."""
         self.gateway.send(self.device, {'motor': 2})
 
-    def close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close cover."""
         self.gateway.send(self.device, {'motor': 1})
 
-    def stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the cover."""
         self.gateway.send(self.device, {'motor': 0})
 
-    def open_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
         self.gateway.send(self.device, {'motor': 5})
 
-    def close_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
         self.gateway.send(self.device, {'motor': 6})
 
@@ -201,7 +114,7 @@ class XiaomiCoverMIOT(XiaomiGenericCover):
 class AqaraRollerShadeE1(XiaomiGenericCover):
     """ Aqara Roller Shade E1 (lumi.curtain.acn002) """
 
-    _attr_supported_features = (
+    _attr_supported_features: CoverEntityFeature = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
         | CoverEntityFeature.SET_POSITION
@@ -210,24 +123,25 @@ class AqaraRollerShadeE1(XiaomiGenericCover):
         | CoverEntityFeature.CLOSE_TILT
     )
 
-    def __init__(self, gateway, device, atrr):
-        super().__init__(gateway, device, atrr)
+    def __init__(self, gateway: Gateway, device: dict, attr: str) -> None:
+        super().__init__(gateway, device, attr)
         self._mi_mode = True if device.get('mi_spec') else False
 
-    def stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the cover."""
         if self._mi_mode:
             self.gateway.send(self.device, {'motor': 0})
         else:
             self.gateway.send(self.device, {'motor': 2})
 
-    def open_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
         if self._mi_mode:
             self.gateway.send(self.device, {'motor': 4})
         else:
             self.gateway.send(self.device, {'motor': 6})
 
-    def close_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
         if self._mi_mode:
             self.gateway.send(self.device, {'motor': 3})
@@ -250,21 +164,22 @@ class AqaraVerticalBlindsController(XiaomiGenericCover):
 
     _tilt_angle: int | None = None  # -90~90
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         if (last_state := await self.async_get_last_state()) is not None:
             if (tilt_position := last_state.attributes.get(ATTR_CURRENT_TILT_POSITION)) is not None:  # 0~100
                 self._tilt_angle = 90 - (tilt_position / 100 * 90)
         await super().async_added_to_hass()
 
-    def update(self, data: dict = None):
-        """ update state """
-        if TILT_POSITION in data:
-            value = data[TILT_POSITION]  # value is -90~90
+    def update(self, data: dict) -> None:
+        """Update state."""
+        if ATTR_TILT_POSITION in data:
+            value = data[ATTR_TILT_POSITION]  # value is -90~90
             self._tilt_angle = value
-        if POSITION in data:
+        if ATTR_POSITION in data:
             # clear `opening` or `closing` when receiving `position`
-            self._state = STATE_UNKNOWN
+            self._attr_is_opening = False
+            self._attr_is_closing = False
         super().update(data)
 
     @property
@@ -277,15 +192,15 @@ class AqaraVerticalBlindsController(XiaomiGenericCover):
             return None
         return int((90 - abs(self._tilt_angle)) / 90 * 100)
 
-    def open_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
         self.gateway.send(self.device, {'tilt_position': 0})
 
-    def close_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
         self.gateway.send(self.device, {'tilt_position': -90})
 
-    def set_cover_tilt_position(self, **kwargs):
+    async def async_set_cover_tilt_position(self, **kwargs: Any) -> None:
         """Move the cover tilt to a specific position."""
         tilt_position = kwargs.get(ATTR_TILT_POSITION)  # 0~100
         if (self._tilt_angle or 0) >= 0:
@@ -293,5 +208,6 @@ class AqaraVerticalBlindsController(XiaomiGenericCover):
         else:
             self.gateway.send(self.device, {'tilt_position': (tilt_position / 100 * 90) - 90})  # -90~0
 
-    def stop_cover_tilt(self, **kwargs: Any) -> None:
+    async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
+        """Stop the cover."""
         self.gateway.send(self.device, {'tilt_motor': 2})
