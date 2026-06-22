@@ -260,7 +260,7 @@ class GatewayGenericDevice(Entity):
                 'manufacturer': device.get('device_manufacturer', ""),
                 'model': device.get('model', ""),
                 'name': device.get('device_name', ""),
-                'sw_version': device.get('sw_version', ""),
+                'sw_version': str(device.get('sw_version', "")),
                 'hw_version': device.get('hw_version', ""),
                 'serial_number': device.get('serial_number', "")
             }
@@ -271,7 +271,7 @@ class GatewayGenericDevice(Entity):
                 'manufacturer': device.get('device_manufacturer', ""),
                 'model': device.get('device_model', ""),
                 'name': device.get('device_name', ""),
-                'sw_version': device.get('model_ver', ""),
+                'sw_version': str(device.get('model_ver', "")),
                 'via_device': (DOMAIN, self.gateway.device['mac'])
             }
         # ble and mesh
