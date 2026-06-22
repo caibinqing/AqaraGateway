@@ -6,12 +6,10 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 from homeassistant.core import HomeAssistant, Event
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.entity_registry import EntityRegistry
 from homeassistant.helpers.system_info import async_get_system_info
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceEntry
 
 from .core.gateway import Gateway
 from .core.utils import AqaraGatewayDebug
@@ -116,6 +114,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         await hass.config_entries.async_forward_entry_unload(entry, domain)
         for domain in DOMAINS
     ])
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    # reference: https://developers.home-assistant.io/docs/device_registry_index/#removing-devices
+    _LOGGER.info("[%s] Remove device entry: %s", config_entry.unique_id, device_entry.id)
+    return True
 
 
 def gateway_state_property(func):
