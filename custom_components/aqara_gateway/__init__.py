@@ -209,7 +209,9 @@ class GatewayGenericDevice(Entity):
         self._name = (self.device['device_name'] + ' ' +
                         self._attr.replace('_', ' ').title())
 
-        self.entity_id = f"{DOMAIN}.{self._unique_id}"
+        params = device['params'] or device['mi_spec']
+        domain = next((p[3] for p in params if p[2] == attr), DOMAIN)
+        self.entity_id = f"{domain}.{self._unique_id}"
         self.entity_id = self.entity_id.replace(' ', '_').replace(':', '').lower()
 
     def debug(self, message: str):
